@@ -2,99 +2,112 @@
 
   'use strict';
 
-  angular.module('shoppingListCheckOff', [])
-  .controller('ToBuyController', ToBuyController)
-  .controller('AlreadyBoughtController', AlreadyBoughtController)
-  .service('ShoppingListCheckOffService', ShoppingListCheckOffService);
+  angular.module('NarrowItDownApp', [])
+  .controller('NarrowItDownController', NarrowItDownController )
+  .service('MenuSearchService', MenuSearchService)
+  .constant('ApiBasePath', "https://davids-restaurant.herokuapp.com")
+  .directive('foundItems', FoundItemsDirective);
 
-  ToBuyController.$inject = ['ShoppingListCheckOffService'];
-  function ToBuyController(ShoppingListCheckOffService) {
-    var toBuyCtr = this;
-    var shoppingListCheckOffService= ShoppingListCheckOffService;
-    toBuyCtr.buyList = [];
-    toBuyCtr.allBought=false;
-    toBuyCtr.bought = function (item) {
-      if(!isAllBought()){
-        shoppingListCheckOffService.bought(item);
-        toBuyCtr.allBought = isAllBought();
-      }else {
-        toBuyCtr.allBought = true;
-      }
-    };
+  function FoundItemsDirective() {
+  var ddo = {
+    restrict: 'E',
+    templateUrl: 'found-items-list.html',
+    scope: {
+      found: '<',
+      message: '@',
+      onEmpty:'&',
+      onRemove: '&'
+    },
+    controller: NarrowItDownController,
+    controllerAs: 'narrowItCtrl',
+    bindToController: true
+  };
 
-    toBuyCtr.getToBuyList = function () {
-      toBuyCtr.buyList = shoppingListCheckOffService.toBuyList();
-      return toBuyCtr.buyList;
-    };
-    function isAllBought () {
-      return ShoppingListCheckOffService.isAllBoughtService();
+  return ddo;
+}
+
+  NarrowItDownController.$inject = ['MenuSearchService', "$scope"];
+
+  function NarrowItDownController (MenuSearchService, $scope) {
+    var narrowItCtrl = this;
+    narrowItCtrl.message = "";
+    $scope.searchTerm="";
+    narrowItCtrl.found =[];
+    narrowItCtrl.nothingToShow = false;
+
+    var menuSearchService = MenuSearchService;
+    function activate(){
+
+      return  menuSearchService.getMatchedMenuItems($scope.searchTerm)
+      .then(function(data){
+          narrowItCtrl.message = "Nothing found!";
+        narrowItCtrl.found = data;
+        if(narrowItCtrl.found.length > 0 ){
+            narrowItCtrl.nothingToShow = false;
+        }
+        return narrowItCtrl.found;
+      });
     }
-    toBuyCtr.isItemBought =  function (itemIndex) {
-      return ShoppingListCheckOffService.isItemBoughtService(itemIndex);
-    };
+   narrowItCtrl.getMatchedMenuItems = function () {
+       narrowItCtrl.nothingToShow = false;
+     activate();
+   };
+
+  //  diplays nothing found only when user has perform search
+   narrowItCtrl.showNotFoundMessage = function () {
+     return (menuSearchService.noSearchMatched() && menuSearchService.searched()) ;
+   };
+   narrowItCtrl.remove = function (itemIndex) {
+     if(narrowItCtrl.found.length){
+       console.log( itemIndex);
+        narrowItCtrl.found.splice(itemIndex, 1);
   }
 
-  AlreadyBoughtController.inject = ['ShoppingListCheckOffService'];
-  function AlreadyBoughtController(ShoppingListCheckOffService) {
-    var boughtCtr = this;
-    boughtCtr.alreadyBoughtList= [];
-    var shoppingListCheckOffService= ShoppingListCheckOffService;
-
-    boughtCtr.getBoughList = function () {
-      boughtCtr.alreadyBoughtList = shoppingListCheckOffService.boughtList();
-      return boughtCtr.alreadyBoughtList;
-    };
-
-    boughtCtr.isEmpty = function () {
-      return boughtCtr.alreadyBoughtList.length>0? false : true;
-
-    };
-
+   };
   }
 
-  function ShoppingListCheckOffService() {
+  MenuSearchService.$inject = ['$http', 'ApiBasePath'];
+  function MenuSearchService($http, ApiBasePath) {
     var service = this;
-    service.itemList = [
-      { name: "tomatoes", quantity: 10 , bought:false},
-      { name: "pizza", quantity: 10, bought:false },
-      { name: "kiwi", quantity: 10, bought:false },
-      { name: "orange", quantity: 10, bought:false },
-      { name: "banana", quantity: 10, bought:false },
-      { name: "candy", quantity: 10, bought:false },
-      { name: "cat food", quantity: 10, bought:false }
-    ];
+    service.searchTerm = "";
+    var nothingFound = true;
+    var searched = false;
+    var foundItems = [];
 
-    service.bought = function (item) {
-      if (service.itemList.length) {
-        var itemIndex = service.itemList.indexOf(item);
-        item.bought = true;
-        service.itemList[itemIndex] = item;
-      }
-      else {
-        throw new Error("Service item list is empty.");
-      }
+    service.getMatchedMenuItems = function (searchTerm){
+      service.searchTerm = searchTerm;
+        searched = true;
+      return $http({
+        method: "GET",
+        url: (ApiBasePath + "/menu_items.json"),
+        params: {
+          category: ''
+        }
+      })
+      .then(function (result) {
+        foundItems = result.data.menu_items.filter(searchT);
+        if(foundItems.length >0){
+          nothingFound = false;
+        }else{
+            nothingFound = true;
+        }
+        // return processed items
+        return foundItems;
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
     };
-
-    service.boughtList = function () {
-      return service.itemList.filter(itemBought);
-    };
-
-    service.toBuyList = function () {
-      return service.itemList.filter(itemToBuy);
-    };
-
-    service.isAllBoughtService = function () {
-      return service.itemList.every(itemBought);
-    };
-
-    function itemBought(item) {
-      return item.bought === true;
+    function searchT (item){
+      return item.description.includes(service.searchTerm );
     }
-
-    function itemToBuy(item) {
-      return item.bought === false;
-    }
-
+    service.noSearchMatched = function (){
+      return nothingFound;
+    };
+    // this force message not to show when no search is done
+    service.searched = function (){
+        return searched;
+    };
     return service;
   }
 
