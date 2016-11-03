@@ -1,0 +1,13 @@
+<ul>
+   <li class="" ng-repeat="item in narrowItCtrl.found">
+    <h4>{{item.short_name}}: {{item.name}}</h4>
+    {{item.description}}
+     <button
+       ng-click="narrowItCtrl.onRemove({index: $index})"
+       class="btn btn-default">
+       <span class="glyphicon glyphicon-remove"></span>
+         Don't want this one!
+     </button>
+   </li>
+ </ul>
+ <div class="emptyMessage" ng-if="narrowItCtrl.showNotFoundMessage()">{{narrowItCtrl.message}}</div>
