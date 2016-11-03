@@ -50,12 +50,21 @@
     }
    narrowItCtrl.getMatchedMenuItems = function () {
        narrowItCtrl.nothingToShow = false;
-     activate();
+       if($scope.searchTerm.length > 0){
+          activate();
+       }else{
+         narrowItCtrl.message = "Nothing found!";
+       }
+
    };
 
   //  diplays nothing found only when user has perform search
    narrowItCtrl.showNotFoundMessage = function () {
-     return (menuSearchService.noSearchMatched() && menuSearchService.searched()) ;
+      if($scope.searchTerm.length > 0){
+         return (menuSearchService.noSearchMatched() && menuSearchService.searched()) ;
+      }else{
+       return (menuSearchService.noSearchMatched()) ;
+     }
    };
    narrowItCtrl.remove = function (itemIndex) {
      if(narrowItCtrl.found.length){
