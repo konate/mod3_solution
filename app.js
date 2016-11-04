@@ -32,37 +32,53 @@
     var narrowItCtrl = this;
     narrowItCtrl.message = "";
     $scope.searchTerm="";
+    $scope.submittedError = false;
     narrowItCtrl.found =[];
     narrowItCtrl.nothingToShow = false;
 
     var menuSearchService = MenuSearchService;
-    function activate(){
 
-      return  menuSearchService.getMatchedMenuItems($scope.searchTerm)
-      .then(function(data){
-          narrowItCtrl.message = "Nothing found!";
-        narrowItCtrl.found = data;
-        if(narrowItCtrl.found.length > 0 ){
-            narrowItCtrl.nothingToShow = false;
-        }
-        return narrowItCtrl.found;
-      });
-    }
+    ///////////////////////////////
    narrowItCtrl.getMatchedMenuItems = function () {
        narrowItCtrl.nothingToShow = false;
-       if($scope.searchTerm.length > 0){
+       if($scope.searchTerm){
           activate();
        }else{
+        $scope.submittedError = true;
+         console.log("CLICKED: " + $scope.submittedError );
+
+         narrowItCtrl.found.splice(0,narrowItCtrl.found.length);
          narrowItCtrl.message = "Nothing found!";
        }
 
    };
+   ////////////////////////////////
+       function activate(){
+         return  menuSearchService.getMatchedMenuItems($scope.searchTerm)
+         .then(function(data){
+           narrowItCtrl.found = data;
+           if(narrowItCtrl.found.length > 0 ){
+               narrowItCtrl.nothingToShow = false;
+           }
+           return narrowItCtrl.found;
+         });
+       }
 
   //  diplays nothing found only when user has perform search
    narrowItCtrl.showNotFoundMessage = function () {
-      if($scope.searchTerm.length > 0){
-         return (menuSearchService.noSearchMatched() && menuSearchService.searched()) ;
+
+   if($scope.submittedError===true) {
+     console.log("showNot 1: " + $scope.submittedError );
+     return true;
+   }
+      if($scope.searchTerm){
+           console.log("showNot 2: " + $scope.submittedError );
+          return (menuSearchService.noSearchMatched() && menuSearchService.searched()) ;
+
       }else{
+           console.log("menuSearchService.noSearchMatched(): " + menuSearchService.noSearchMatched() );
+            console.log("showNot 3 $scope.submittedError: " + $scope.submittedError );
+           if(!$scope.searchTerm || $scope.searchTerm.length ===0) return true;
        return (menuSearchService.noSearchMatched()) ;
      }
    };
@@ -74,18 +90,18 @@
 
    };
   }
-
+//////////////////// SERVICE    //////
   MenuSearchService.$inject = ['$http', 'ApiBasePath'];
   function MenuSearchService($http, ApiBasePath) {
     var service = this;
     service.searchTerm = "";
-    var nothingFound = true;
-    var searched = false;
+    service.nothingFound = true;
+    service.searched = false;
     var foundItems = [];
 
     service.getMatchedMenuItems = function (searchTerm){
       service.searchTerm = searchTerm;
-        searched = true;
+        service.searched = true;
       return $http({
         method: "GET",
         url: (ApiBasePath + "/menu_items.json"),
@@ -96,9 +112,9 @@
       .then(function (result) {
         foundItems = result.data.menu_items.filter(searchT);
         if(foundItems.length >0){
-          nothingFound = false;
+          service.nothingFound = false;
         }else{
-            nothingFound = true;
+            service.nothingFound = true;
         }
         // return processed items
         return foundItems;
@@ -111,11 +127,11 @@
       return item.description.includes(service.searchTerm );
     }
     service.noSearchMatched = function (){
-      return nothingFound;
+      return service.nothingFound;
     };
     // this force message not to show when no search is done
     service.searched = function (){
-        return searched;
+        return service.searched;
     };
     return service;
   }
