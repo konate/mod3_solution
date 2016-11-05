@@ -5,37 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="styles/bootstrap.min.css">
   <link rel="stylesheet" href="styles/styles.css">
-
   <script src="angular.min.js"></script>
 </head>
 <body>
-  <script id="__bs_script__">//<![CDATA[
-    document.write("<script async src='/browser-sync/browser-sync-client.2.11.2.js'><\/script>".replace("HOST", location.hostname));
-    //]]></script>
-
     <div class="container" ng-controller = "NarrowItDownController as narrowItCtrl">
       <h1>Narrow Down Your Chinese Menu Choice</h1>
-
       <form novalidate class="simple-form">
-        <input type="text" placeholder="search term" class="form-control"  ng-model="searchTerm" required>
-
-        <!-- <div class="form-group narrow-button"> -->
+        <input type="text" placeholder="search term" class="form-control"  ng-model="narrowItCtrl.searchTerm" required>
         <button class="btn btn-primary" ng-click="narrowItCtrl.getMatchedMenuItems()">Narrow It Down For Me!</button>
-        <!-- </div> -->
       </form>
-
-      <!-- found-items should be implemented as a component -->
       <div>
         <found-items
-        found="narrowItCtrl.found"
-        on-remove="narrowItCtrl.remove(index)"
-        message="{{narrowItCtrl.message}}"
-        nothingToShow="narrowItCtrl.nothingToShow"
-        >
+          found="narrowItCtrl.found"
+          on-remove="narrowItCtrl.remove(index)"
+          message="{{narrowItCtrl.message}}">
       </found-items>
     </div>
-
   </div>
   <script src="app.js"></script>
+  <script id="__bs_script__">//<![CDATA[
+    document.write("<script async src='http://HOST:3000/browser-sync/browser-sync-client.2.11.2.js'><\/script>".replace("HOST", location.hostname));
+//]]></script>
 </body>
 </html>
